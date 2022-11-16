@@ -3,11 +3,19 @@ import { FiSave } from "react-icons/fi";
 import { Country } from "./Country";
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import constantes from "../assets/constantes";
 
 export const Home = () => {
+  const [userCountry, setUserCountry] = useState({
+    nombre_completo: "",
+    country: "",
+  });
+  const [msg, setMsg] = useState({
+    message: "",
+    color: "",
+    visible: "no",
+  });
   const [countries, setCountries] = useState([]);
-  const countriesInputRef = useRef();
+  // const countriesInputRef = useRef();
   const regionRef = useRef();
 
   const nCountries = countries.status || countries.message;
@@ -32,28 +40,28 @@ export const Home = () => {
     setCountries(data);
   };
 
-  const searchCountries = () => {
-    const searchValue = countriesInputRef.current.value;
+  // const searchCountries = () => {
+  //   const searchValue = countriesInputRef.current.value;
 
-    if (searchValue.trim()) {
-      const fetchSearch = async () => {
-        const response = await fetch(
-          `https://restcountries.com/v2/name/${searchValue}`
-        );
-        const data = await response.json();
+  //   if (searchValue.trim()) {
+  //     const fetchSearch = async () => {
+  //       const response = await fetch(
+  //         `https://restcountries.com/v2/name/${searchValue}`
+  //       );
+  //       const data = await response.json();
 
-        setCountries(data);
-      };
+  //       setCountries(data);
+  //     };
 
-      try {
-        fetchSearch();
-      } catch (error) {
-        console.log(error);
-      }
-    } else {
-      fetchData();
-    }
-  };
+  //     try {
+  //       fetchSearch();
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   } else {
+  //     fetchData();
+  //   }
+  // };
 
   const selectRegion = () => {
     const selectValue = regionRef.current.value;
@@ -85,18 +93,60 @@ export const Home = () => {
     }
   };
 
+  const handleChange = (e) => {
+    const { value } = e.target;
+    userCountry.nombre_completo = value;
+  };
+
+  const onCountrySelect = (newUser) => {
+    userCountry.country = newUser[0];
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`http://localhost:8000/api/pais`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "Application/json",
+      },
+      body: JSON.stringify(userCountry),
+    });
+    const content = await response.json();
+    setMsg(
+      content.msg === 1
+        ? {
+            message: "Se ha añadido el usuario correctamente",
+            color: "success",
+            visible: "si",
+          }
+        : {
+            message: "No se ha podido añadir al usuario",
+            color: "danger",
+            visible: "si",
+          }
+    );
+    setUserCountry({ nombre_completo: "", newUser: "" });
+  };
+
   return (
     <Routes>
       <Route
         path="/"
         element={
           <>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div
                 name="home"
                 className="h-96 w-full bg-gradient-to-b from-black
                      via-black to-gray-800"
               >
+                {msg.visible === "si" ? (
+                  <div className={"alert alert-" + msg.color} role="alert">
+                    {msg.message}
+                  </div>
+                ) : (
+                  ``
+                )}
                 <div
                   className="max-w-h-96-lg mx-auto flex
              items-center h-full px-4 md:flex-row "
@@ -113,23 +163,11 @@ export const Home = () => {
                       <input
                         className="shadow appearance-none border rounded w-72 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         id="nombre_completo"
+                        onBlurCapture={handleChange}
+                        // value={userCountry.nombre_completo}
                         type="text"
                         placeholder="Username"
                         required
-                      />
-                      <label
-                        className="block text-white text-sm font-bold mb-2 my-2"
-                        for="country"
-                      >
-                        País:
-                      </label>
-                      <input
-                        className="shadow appearance-none border rounded w-72 py-2 px-3 my-0 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        type="text"
-                        id="country"
-                        placeholder="Ingrese el nombre del país aquí..."
-                        ref={countriesInputRef}
-                        onChange={searchCountries}
                       />
                       <select
                         className="block appearance-none w-60 bg-gray-200 border border-gray-200 text-gray-700 py-2 px-4 my-2 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
@@ -179,6 +217,7 @@ export const Home = () => {
                     region={country.region}
                     flag={country.flag}
                     codes={country.callingCodes}
+                    onNewCountry={onCountrySelect}
                   />
                 ))
               ) : (
